@@ -15,9 +15,12 @@ import SearchPage from './SearchPage';
 import PlayBar from './PlayBar'; // Import PlayBar component
 import Notification from './Notification';
 import logo from '../images/iimaginaryLogoDarkGray.jpeg'
-import ManagePatches from './ManagePatches';
+import ManageUploads from './ManageUploads';
 import UserDropdown from './UserDropdown';
 import HelpPage from './HelpPage';
+import ArtistPage from './ArtistPage'; // Make sure to import the new ArtistPage component
+import PatchPage from './PatchPage';
+
 
 
 
@@ -56,6 +59,8 @@ function App() {
       'patchDeleted': 'Patch deleted', // Add this line
       'Added to Favourites': 'Added to Favourites',
       'Removed from Favourites': 'Removed from Favourites',
+      'Image file too large': 'Image file too large',
+      'Patch file too large': 'Patch file too large',
       // ... (other codes)
     };
 
@@ -77,8 +82,8 @@ function App() {
             dispatch(clearUser());
             message = data || 'Logged out successfully';
 
-            // If on managePatches page, navigate to searchPage
-            if (location.pathname === '/managePatches') {
+            // If on manageUploads page, navigate to searchPage
+            if (location.pathname === '/manageUploads') {
               navigate('/');
           }
         } else if (response.headers.get('Content-Type').includes('application/json')) {
@@ -194,7 +199,12 @@ function App() {
         </div>
 
         {isAuthModalOpen && <AuthModal closeModal={closeAuthModal} setNotificationType={setNotificationType} />}
-        <MetadataModal isOpen={isMetadataModalOpen} closeModal={() => setIsMetadataModalOpen(false)} fetchPatchInfo={fetchPatchInfo} />
+        <MetadataModal 
+            isOpen={isMetadataModalOpen} 
+            closeModal={() => setIsMetadataModalOpen(false)} 
+            fetchPatchInfo={fetchPatchInfo} 
+            setNotification={setNotificationType} // Make sure to pass this function
+          />
         <Setup patchNumber={patchNumber} />
         <Routes>
           <Route path="/reset-password" element={<ResetPasswordForm />} />
@@ -213,10 +223,13 @@ function App() {
               setSearchTerm={setSearchTerm}
             />
           } />
-          <Route path="/managePatches" element={<ManagePatches />} />
+          <Route path="/manageUploads" element={<ManageUploads setNotification={setNotificationType} />} />
           <Route path="/help" element={<HelpPage />} />
+          <Route path="/artist/:username/:patchname" element={<PatchPage />} />
+          <Route path="/artist/:username" element={<ArtistPage />} />
         </Routes>
         <PlayBar setNotificationType={setNotificationType} />
+
       </div>
   );
 }

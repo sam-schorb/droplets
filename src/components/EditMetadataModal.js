@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import Tooltip from './Tooltip';
 
-function EditMetadataModal({ isOpen, closeModal, patchId, fetchPatchInfo }) {
+function EditMetadataModal({ isOpen, closeModal, patchId, fetchPatchInfo, setNotification }) {
     const [selectedImage, setSelectedImage] = useState(null);
     const [primaryTag, setPrimaryTag] = useState('');
     const [secondaryTag, setSecondaryTag] = useState('');
@@ -10,23 +11,40 @@ function EditMetadataModal({ isOpen, closeModal, patchId, fetchPatchInfo }) {
     const options = ["synth", "sequencer", "drum machine", "sampler", "effect", "glitch", "utility", "modulation"];
 
     useEffect(() => {
-        if (isOpen && patchId) {
-            fetch(`/getFullPatchInfo/${patchId}`)
-                .then(res => res.json())
-                .then(data => {
-                    setPatchName(data.name);
-                    const [primary, secondary] = data.tags.split(", ");
-                    setPrimaryTag(primary || '');
-                    setSecondaryTag(secondary || '');
-                    setPatchDescription(data.description);
-                    setSelectedImage(null); // This might need further logic for images
-                });
-        }
-    }, [isOpen, patchId]);
+        const fetchPatchData = async () => {
+          if (isOpen && patchId) {
+            try {
+              const response = await fetch(`/getFullPatchInfo/${patchId}`);
+              const data = await response.json();
+              if (data) {
+                setPatchName(data.name || '');
+                // Check if tags exist and are not undefined before splitting
+                if (data.tags) {
+                  const [primary, secondary] = data.tags.split(", ");
+                  setPrimaryTag(primary || '');
+                  setSecondaryTag(secondary || '');
+                } else {
+                  // Set default values if tags don't exist
+                  setPrimaryTag('');
+                  setSecondaryTag('');
+                }
+                setPatchDescription(data.description || '');
+                setSelectedImage(null); // You might want to handle image data here if it comes from the server
+              }
+            } catch (error) {
+              console.error('Error fetching patch info:', error);
+              // Handle fetch error (e.g., set an error message state and display it)
+            }
+          }
+        };
+      
+        fetchPatchData();
+      }, [isOpen, patchId]);
+      
 
     const handleSave = async () => {
         if (!primaryTag && !secondaryTag) {
-            alert('Please select at least one tag.');
+            setNotification('Please select at least one tag.');
             return;
         }
 
@@ -47,16 +65,16 @@ function EditMetadataModal({ isOpen, closeModal, patchId, fetchPatchInfo }) {
             });
 
             if (response.ok) {
-                alert('Patch updated successfully!');
+                setNotification('Patch updated successfully!');
                 setSelectedImage(null);
                 fetchPatchInfo();
                 handleCancel();
             } else {
-                alert('Failed to update patch.');
+                setNotification('Failed to update patch.');
             }
         } catch (error) {
             console.error('Error updating patch:', error);
-            alert('Failed to update patch.');
+            setNotification('Failed to update patch.');
         }
     };
 
@@ -65,7 +83,7 @@ function EditMetadataModal({ isOpen, closeModal, patchId, fetchPatchInfo }) {
         if (file && file.type === 'image/jpeg') {
             setSelectedImage(file);
         } else {
-            alert('Please select a valid JPG image.');
+            setNotification('Please select a valid JPG image.');
         }
     };
 
@@ -80,11 +98,14 @@ function EditMetadataModal({ isOpen, closeModal, patchId, fetchPatchInfo }) {
 
     return (
         <div id="edit-metadata-modal" className={`fixed z-52 top-0 left-0 w-full h-full bg-gray-900 bg-opacity-75 flex justify-center items-center transition-opacity duration-300 ease-in-out ${isOpen ? 'block z-50' : 'hidden'}`} onClick={handleCancel}>
-            <div className="bg-gray-400 p-8 rounded-lg max-w-screen-sm w-full text-gray-900 lg:w-1/3" onClick={e => e.stopPropagation()}>
-                <div className="flex flex-col mb-4">
-                    <label>Name:</label>
-                    <input type="text" value={patchName} onChange={(e) => setPatchName(e.target.value)} className="border border-gray-400 p-2"/>
-                </div>
+          <div className="bg-gray-400 p-8 rounded-lg max-w-screen-sm w-full text-gray-900 lg:w-1/3" onClick={e => e.stopPropagation()}>
+            <div className="flex flex-col mb-4">
+              <label htmlFor="patch-name" className="flex items-center">
+                Name:
+                <Tooltip message="Reserved characters: /[:/?#[@!$&'()*+,;= -]/" />
+              </label>
+              <input type="text" id="patch-name" value={patchName} onChange={(e) => setPatchName(e.target.value)} className="border border-gray-400 p-2" />
+            </div>
                 <div className="flex flex-col mb-4">
                     <label>Primary Tag:</label>
                     <select value={primaryTag} onChange={(e) => setPrimaryTag(e.target.value)} className="border border-gray-400 p-2">

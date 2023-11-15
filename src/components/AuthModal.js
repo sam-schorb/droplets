@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../slices/userSlice';
+import Tooltip from './Tooltip';
 
 const AuthModal = ({closeModal, setNotificationType}) => {
     const [view, setView] = useState('login');
@@ -87,35 +88,44 @@ const AuthModal = ({closeModal, setNotificationType}) => {
             return;
         }
     
-            const formData = new FormData();
-            formData.append('email', email);
-            formData.append('username', username);
-            formData.append('password', password);
-            if(profilePicture) {
-                formData.append('profilePicture', profilePicture); // change 'imageFile' to 'file' if you didn't change the input name
-            }
-
-            try {
-                const response = await fetch('/register', {
-                    method: 'POST',
-                    body: formData
-                });
+        const formData = new FormData();
+        formData.append('email', email);
+        formData.append('username', username);
+        formData.append('password', password);
+        if (profilePicture) {
+            formData.append('profilePicture', profilePicture); // Ensure the field name matches the server expectation.
+        }
     
-            let message = '';
-            
-            if (response.headers.get('Content-Type').includes('application/json')) {
+        try {
+            const response = await fetch('/register', {
+                method: 'POST',
+                body: formData,
+                // You might need to include credentials if you're handling sessions
+                // credentials: 'include'
+            });
+    
+            if (response.ok) {
+                // The response is expected to be in JSON format
                 const data = await response.json();
-                message = data.message;
+                setNotificationType(data.message); // No need for the '||' since we ensure the server sends a message
             } else {
-                message = await response.text();
+                // Handle different cases of errors
+                let message = '';
+                if (response.headers.get('Content-Type').includes('application/json')) {
+                    const data = await response.json();
+                    message = data.type; // Use the `type` property as the message
+                } else {
+                    message = 'An unexpected error occurred during registration.';
+                }
+                setNotificationType(message);
             }
-    
-            setNotificationType(message);
-            
         } catch (error) {
+            console.error('Error registering:', error);
+            // This message will only be set if there's a network issue or if response.json() throws an error
             setNotificationType('Error registering.');
         }
     };
+    
     
 
     const handleForgotUsername = async () => {
@@ -196,8 +206,20 @@ const AuthModal = ({closeModal, setNotificationType}) => {
             case 'register':
                 return (
                     <div>
-                        <input className="border border-gray-400 p-2 mb-4 w-full" type="text" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} /><br />
-                        <input className="border border-gray-400 p-2 mb-4 w-full" type="text" placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} /><br />
+                        <div>
+                            <label htmlFor="username" className="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                                <Tooltip message="Reserved characters for username: /[:/?#[@!$&'()*+,;= -]/" />
+                            </label>
+                            <input
+                                className="border border-gray-400 p-2 mb-4 w-full"
+                                type="text"
+                                placeholder="Username"
+                                id="username"
+                                value={username}
+                                onChange={e => setUsername(e.target.value)}
+                            /> 
+                         </div>
+                         <input className="border border-gray-400 p-2 mb-4 w-full" type="text" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} /><br />
                         <input className="border border-gray-400 p-2 mb-4 w-full" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} /><br />
                         <input className="border border-gray-400 p-2 mb-4 w-full" type="password" placeholder="Confirm Password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} /><br />
                         <input className="border border-gray-400 p-2 mb-4 w-full" type="file" name="imageFile" onChange={e => setProfilePicture(e.target.files[0])} /><br />

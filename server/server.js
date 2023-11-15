@@ -150,19 +150,27 @@ const generateRefreshToken = (user) => {  // NEW: Function to generate refresh t
 
 // Input validation function
 const validateInput = (input, type) => {
+    const reservedCharsRegex = /[:/?#[@!$&'()*+,;= -]/; // Same as above
+    
     switch (type) {
         case 'email':
             return validator.isEmail(input);
         case 'username':
-            return validator.isAlphanumeric(input) && validator.isLength(input, { min: 4, max: 30 });
+            // Check that the username is alphanumeric, within the desired length,
+            // and does not contain any reserved characters or a hyphen.
+            return validator.isAlphanumeric(input) &&
+                   validator.isLength(input, { min: 4, max: 30 }) &&
+                   !reservedCharsRegex.test(input);
         case 'password':
-            return validatePassword(input, type); // Assuming validatePassword is defined elsewhere in your code
+            // Assuming validatePassword is defined elsewhere in your code and returns a boolean
+            return validatePassword(input);
         case 'patchId':
             return ObjectId.isValid(input);
         default:
             return true;
     }
 };
+
 
 
 const isValidPatchContent = (content) => {
@@ -217,10 +225,14 @@ const isValidPatchContent = (content) => {
 
 
 app.post('/uploadPatch', authenticateJWT, upload.fields([{ name: 'patchFile', maxCount: 1 }, { name: 'imageFile', maxCount: 1 }]), async (req, res) => {
-    console.log(req.user);  // Debug log
     try {
+        const name = req.body.name;
+
+        // Regular expression to match reserved characters and hyphens
+        const invalidCharsRegex = /[:/?#[@!$&'()*+,;= -]/; // Hyphen at the end, square brackets not escaped
+
         // Validate name
-        if (!req.body.name || typeof req.body.name !== 'string' || req.body.name.length > 200) {
+        if (!name || typeof name !== 'string' || name.length > 200 || invalidCharsRegex.test(name)) {
             return res.status(400).send('Invalid patch name');
         }
 
@@ -335,8 +347,44 @@ app.use((req, res, next) => {
     next();
 });
 
+app.get('/artist/:username/:patchname', async (req, res) => {
+    const { username, patchname } = req.params;
 
+    // Decode URI component and handle hyphens as spaces
+    const decodedPatchname = decodeURIComponent(patchname).replace(/-/g, ' ');
 
+    try {
+        const user = await usersCollection.findOne({ username });
+        if (!user) {
+            return res.status(404).send('User not found');
+        }
+
+        const patch = await patchesCollection.findOne({
+            userId: user._id.toString(), // Make sure this matches the type in the DB
+            name: { $regex: new RegExp('^' + decodedPatchname + '$', 'i') } // Case-insensitive regex search
+        });
+
+        if (!patch) {
+            return res.status(404).send('Patch not found');
+        }
+
+        const patchInfo = {
+            _id: patch._id,
+            name: patch.name,
+            username: user.username,
+            uploadDate: patch.uploadDate,
+            image: patch.image,
+            userId: patch.userId,
+            description: patch.description,
+            tags: patch.tags
+        };
+
+        res.json(patchInfo);
+    } catch (error) {
+        console.error(`Error fetching patch for user '${username}':`, error);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
 app.get('/getPatch/:patchId', async (req, res) => {
     try {
@@ -380,7 +428,7 @@ app.get('/getPatchInfo', async (req, res) => {
         const patchesInfo = await patchesCollection.find(
             query,
             {
-                projection: { _id: 1, name: 1, username: 1, uploadDate: 1, image: 1 }
+                projection: { _id: 1, name: 1, username: 1, uploadDate: 1, image: 1, userId: 1 }
             }
         )
         .sort({ uploadDate: -1 })  // Sorting by uploadDate in descending order
@@ -392,6 +440,153 @@ app.get('/getPatchInfo', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
+
+// Route to get patches uploaded by a specific user
+app.get('/getUserPatchInfo/:userId', async (req, res) => {
+
+    const userId = req.params.userId;
+
+
+    // Error handling for missing user ID
+    if (!userId) {
+        console.error('[ERROR] Missing user ID in request');
+        return res.status(400).send('Missing user ID');
+    }
+
+    try {
+
+        const userPatches = await patchesCollection.find(
+            { userId: userId },  // Using userId as string directly
+            {
+                projection: { _id: 1, name: 1, username: 1, uploadDate: 1, image: 1 }
+            }
+        )
+        .sort({ uploadDate: -1 })  // Sorting by uploadDate in descending order
+        .toArray();
+
+        if (userPatches && userPatches.length > 0) {
+            console.log(`[INFO] Successfully fetched ${userPatches.length} patches for user with ID: ${userId}`);
+        } else {
+            console.log(`[INFO] No patches found for user with ID: ${userId}`);
+        }
+
+        // Respond with the patches uploaded by the user
+        res.status(200).json(userPatches);
+    } catch (error) {
+        console.error('[ERROR] Exception caught when fetching patches:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
+// Route to get patches uploaded by a specific user by username
+app.get('/getArtistPatchInfo/:username', async (req, res) => {
+    const username = req.params.username;
+
+    // Error handling for missing username
+    if (!username) {
+        console.error('[ERROR] Missing username in request');
+        return res.status(400).send('Missing username');
+    }
+
+    try {
+        // First find the user by username to get the userId
+        const user = await usersCollection.findOne({ username: username });
+        if (!user) {
+            return res.status(404).send('User not found');
+        }
+
+        const userPatches = await patchesCollection.find(
+            { userId: user._id.toString() }, // Use the user's ID from the user object
+            {
+                projection: { _id: 1, name: 1, username: 1, uploadDate: 1, image: 1 }
+            }
+        )
+        .sort({ uploadDate: -1 }) // Sorting by uploadDate in descending order
+        .toArray();
+
+        if (userPatches.length > 0) {
+            console.log(`[INFO] Successfully fetched ${userPatches.length} patches for user: ${username}`);
+            res.status(200).json(userPatches);
+        } else {
+            console.log(`[INFO] No patches found for user: ${username}`);
+            res.status(200).json([]);
+        }
+    } catch (error) {
+        console.error(`[ERROR] Exception caught when fetching patches for username '${username}':`, error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// Route to get patches uploaded by a specific user by username
+app.get('/getArtistPatchInfo/:username', async (req, res) => {
+    const username = req.params.username;
+
+    // Error handling for missing username
+    if (!username) {
+        console.error('[ERROR] Missing username in request');
+        return res.status(400).send('Missing username');
+    }
+
+    try {
+        // First find the user by username to get the userId
+        const user = await usersCollection.findOne({ username: username });
+        if (!user) {
+            return res.status(404).send('User not found');
+        }
+
+        const userPatches = await patchesCollection.find(
+            { userId: user._id.toString() }, // Use the user's ID from the user object
+            {
+                projection: { _id: 1, name: 1, username: 1, uploadDate: 1, image: 1 }
+            }
+        )
+        .sort({ uploadDate: -1 }) // Sorting by uploadDate in descending order
+        .toArray();
+
+        if (userPatches.length > 0) {
+            console.log(`[INFO] Successfully fetched ${userPatches.length} patches for user: ${username}`);
+            res.status(200).json(userPatches);
+        } else {
+            console.log(`[INFO] No patches found for user: ${username}`);
+            res.status(200).json([]);
+        }
+    } catch (error) {
+        console.error(`[ERROR] Exception caught when fetching patches for username '${username}':`, error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
+// Fetch user information by username
+app.get('/getUserByUsername/:username', async (req, res) => {
+    const username = req.params.username;
+    try {
+        const user = await usersCollection.findOne(
+            { username: username },
+            { projection: { password: 0, verificationToken: 0 } }
+        );
+
+        if (user) {
+            // If a profile picture exists, convert the buffer to a base64 string
+            if (user.profilePicture) {
+                user.profilePicture = user.profilePicture.toString('base64');
+            }
+
+            res.json(user);
+        } else {
+            res.status(404).send('User not found');
+        }
+    } catch (error) {
+        console.error(`Error fetching user by username '${username}':`, error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
+
+
+
 
 
 // In your backend/server code, add this route
@@ -760,7 +955,7 @@ app.post('/forgot-password', async (req, res) => {
 app.post('/register', upload.single('profilePicture'), async (req, res) => {
     try {
         const { email, username, password } = req.body;
-        const profilePicture = req.file ? req.file.buffer : null;
+        const profilePictureBuffer = req.file ? req.file.buffer : null;
 
         if (!validateInput(email, 'email')) {
             return res.status(400).send('Invalid email');
@@ -790,12 +985,13 @@ app.post('/register', upload.single('profilePicture'), async (req, res) => {
             verificationToken,
             isVerified: false,
             recentlyPlayed: [],
-            profilePicture
+            profilePicture: profilePictureBuffer, // Store the profile picture as a buffer
         };
 
+        // Insert the new user into the database
         await usersCollection.insertOne(newUser);
 
-        const verificationURL = `${process.env.FRONTEND_URL}/reset-password?token=${verificationToken}`;
+        const verificationURL = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
 
         const request = mailjet
             .post("send", {'version': 'v3.1'})
@@ -815,12 +1011,32 @@ app.post('/register', upload.single('profilePicture'), async (req, res) => {
 
         await request;
 
-        res.status(201).send('Verification email sent. Please check your email.');
+        // Send a JSON response with a message property
+        res.status(201).json({ message: 'Verification email sent. Please check your email.' });
     } catch (error) {
-        console.error('Error registering user:', error);
-        res.status(500).send('Internal Server Error');
+        if (error instanceof multer.MulterError) {
+            // A Multer error occurred when uploading.
+            if (error.code === 'LIMIT_FILE_SIZE') {
+                // File too large
+                if (error.field === 'profilePicture') {
+                    // Profile picture file too large
+                    res.status(400).json({ type: 'Image file too large' });
+                } else {
+                    // Patch file too large
+                    res.status(400).json({ type: 'Patch file too large' });
+                }
+            } else {
+                // An unknown Multer error occurred
+                res.status(500).json({ type: 'An unexpected error occurred during file upload.' });
+            }
+        } else {
+            // An unknown error occurred
+            console.error('Error registering user:', error);
+            res.status(500).send('Internal Server Error');
+        }
     }
 });
+
 
 
 app.post('/verify-email', async (req, res) => {
@@ -843,10 +1059,6 @@ app.post('/verify-email', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
-
-
-
-
 
 
 // Add a like
@@ -1008,18 +1220,22 @@ app.get('/userLikes/:userId', async (req, res) => {
 });
 
 if (process.env.NODE_ENV === 'production') {
-    app.use('/static', express.static(path.resolve(__dirname, 'build/static')));
+    // Serve any static files
+    app.use(express.static(path.resolve(__dirname, 'build')));
 
-    // This is your fallback route for production. It should come AFTER your API routes.
-    app.get('*', (req, res) => {
+    // Handle React routing, return all requests to React app
+    app.get('*', function(req, res) {
         res.sendFile(path.resolve(__dirname, 'build', 'index.html'));
     });
 } else {
-    // For non-production environments, serve your development index.html
+    // For non-production environments
+    // Make sure this does not interfere with API routes
+    app.use('/static', express.static(path.join(__dirname, '../public')));
     app.get('*', (req, res) => {
         res.sendFile(path.join(__dirname, '../public/index.html'));
     });
 }
+
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);

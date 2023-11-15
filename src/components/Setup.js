@@ -14,9 +14,13 @@ const Setup = () => {
 
     const generateRandomSeedFromCurrentDate = () => {
         const date = new Date();
-        return (date.getTime() % 1000000) / 1000000; // A random integer derived from the current time.
+        // This will get a number between 0 and 999999
+        const sixDigitNumber = date.getTime() % 1000000;
+        // This will get the last three digits of the above number and convert it back to a fraction
+        const lastThreeDigits = sixDigitNumber % 1000;
+        return lastThreeDigits / 1000; // Return the number as a fractional part.
     };
-
+    
     const setRandomSeedParameterValue = (device) => {
         const param = device.parameters.find(p => p.name === 'randomSeed');
         if (param) {
@@ -27,6 +31,7 @@ const Setup = () => {
             console.log("randomSeed parameter not found in the device.");
         }
     };
+    
 
     
 

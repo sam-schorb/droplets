@@ -5,9 +5,11 @@ import { setPatchNumber } from '../slices/patchInfoSlice';
 import { likePatch, unlikePatch } from '../slices/likedPatchesSlice';
 import { AiOutlineHeart, AiFillHeart } from 'react-icons/ai';
 import Notification from './Notification';
+import { Link } from 'react-router-dom';
 
 
-const ListEntry = ({ singlePatchInfo, userId, hasLiked, likeCount }) => {
+
+const ListEntry = ({ singlePatchInfo, userId, hasLiked, likeCount, isArtistPage }) => {
     const dispatch = useDispatch();
 
     const [localHasLiked, setLocalHasLiked] = useState(hasLiked);
@@ -16,7 +18,6 @@ const ListEntry = ({ singlePatchInfo, userId, hasLiked, likeCount }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [notificationType, setNotificationType] = useState(null);
 
-    // Keeping localLikeCount for potential future use
     // eslint-disable-next-line no-unused-vars
     const [localLikeCount, setLocalLikeCount] = useState(likeCount);
     
@@ -66,6 +67,11 @@ const ListEntry = ({ singlePatchInfo, userId, hasLiked, likeCount }) => {
         dispatch(setPatchNumber(singlePatchInfo._id));
     }, [dispatch, singlePatchInfo._id]);
 
+    const handleUsernameClick = (e) => {
+        // Stop the event from propagating to the parent elements
+        e.stopPropagation();
+    };
+
     const timeSince = (date) => {
         const seconds = Math.floor((new Date() - date) / 1000);
         const timeIntervals = [
@@ -93,33 +99,49 @@ const ListEntry = ({ singlePatchInfo, userId, hasLiked, likeCount }) => {
             {notificationType === 'added' && <Notification message="Added to your Favourites" setType={setNotificationType} />}
             {notificationType === 'removed' && <Notification message="Removed from your Favourites" setType={setNotificationType} />}
             <li 
-                onClick={handleSetPatchNumber} 
+                onClick={handleSetPatchNumber}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
                 className={`grid grid-cols-12 items-center mx-auto py-1 border-b border-gray-400 gap-x-1 cursor-pointer ${isHovered ? 'bg-medium-gray' : ''}`}
-                >
-                    <div className="md:col-span-1 hidden md:block"></div> {/* this placeholder div takes up space only on larger screens */}
-                    {singlePatchInfo.image && !isLoading && (
-                        <div className="col-span-1 w-12 h-12 flex-shrink-0">
-                            <img 
-                                src={`data:image/jpeg;base64,${singlePatchInfo.image.toString('base64')}`} 
-                                alt={singlePatchInfo.name} 
-                                className="w-12 h-12 object-cover hidden md:block"
-                            />
-                        </div>
-                    )}
-                    {/* Name column span adjusted to take up the space on smaller screens */}
-                    <span className="col-span-4 md:col-span-3 lg:col-span-3 truncate">
-                        {!isLoading ? singlePatchInfo.name : 'Loading...'}
-                    </span>
-                <span className="col-span-3 md:col-span-3 lg:col-span-3 text-center truncate">
-                    {!isLoading ? singlePatchInfo.username : 'Loading...'}
+            >
+                {/* Placeholder div */}
+                <div className="md:col-span-1 hidden md:block"></div>
+                {/* Image */}
+                {singlePatchInfo.image && !isLoading && (
+                    <div className="col-span-1 w-12 h-12 flex-shrink-0">
+                        <img 
+                            src={`data:image/jpeg;base64,${singlePatchInfo.image.toString('base64')}`} 
+                            alt={singlePatchInfo.name} 
+                            className="w-12 h-12 object-cover hidden md:block"
+                        />
+                    </div>
+                )}
+                {/* Patch name */}
+                <span className="col-span-4 md:col-span-3 lg:col-span-3 truncate">
+                    {!isLoading ? singlePatchInfo.name : 'Loading...'}
                 </span>
-                <span className="col-span-2 text-right opacity-0 sm:opacity-0 md:opacity-100">
+                {/* Username */}
+                <span 
+                    className="col-span-3 md:col-span-3 lg:col-span-3 text-center truncate hover:underline"
+                    onClick={handleUsernameClick}
+                >
+                    {!isLoading && (
+                        isArtistPage ? (
+                            <span>{singlePatchInfo.username}</span>
+                        ) : (
+                            <Link to={`/artist/${singlePatchInfo.username}`}>
+                            {singlePatchInfo.username}
+                            </Link>
+                        )
+                    )}
+                </span>
+                {/* Upload time */}
+                <span className="col-span-2 text-right opacity-0 sm:opacity-100">
                     {!isLoading ? timeSince(new Date(singlePatchInfo.uploadDate)) : 'Loading...'}
                 </span>
+                {/* Like button */}
                 <div className="flex justify-end items-center col-span-1">
-                <button 
+                    <button 
                     onClick={(e) => { handleLikeToggle(e); }} 
                     disabled={isLoading} 
                     className="flex items-center px-2 py-1 bg-transparent border-0 rounded"
@@ -137,6 +159,8 @@ ListEntry.propTypes = {
     singlePatchInfo: PropTypes.object.isRequired,
     userId: PropTypes.string,
     hasLiked: PropTypes.bool.isRequired,
+    isArtistPage: PropTypes.bool, // Add new prop type
+
 };
 
 export default ListEntry

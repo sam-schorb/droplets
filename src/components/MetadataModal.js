@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import Tooltip from './Tooltip'; // Import the Tooltip component
 
-function MetadataModal({ isOpen, closeModal, fetchPatchInfo }) {
+
+function MetadataModal({ isOpen, closeModal, fetchPatchInfo, setNotification }) {
     const [selectedFile, setSelectedFile] = useState(null);
     const [selectedImage, setSelectedImage] = useState(null);
     const [primaryTag, setPrimaryTag] = useState('');
@@ -31,7 +33,7 @@ function MetadataModal({ isOpen, closeModal, fetchPatchInfo }) {
         const patchDescription = document.getElementById('patch-description').value;
     
         if (!primaryTag && !secondaryTag) {
-            alert('Please select at least one tag.');
+            setNotification('Please select at least one tag.');
             return;
         }
     
@@ -53,20 +55,20 @@ function MetadataModal({ isOpen, closeModal, fetchPatchInfo }) {
             });
     
             if (response.ok) {
-                alert('Patch uploaded successfully!');
+                setNotification('Patch uploaded successfully!');
                 setSelectedFile(null);
                 fetchPatchInfo();
     
                 // Close the modal if the patch upload was successful.
                 handleCancel();
             } else {
-                alert('Failed to upload patch.');
+                setNotification('Failed to upload patch.');
             }
         } catch (error) {
             console.error('Error uploading patch:', error);
-            alert('Failed to upload patch.');
+            setNotification('Failed to upload patch.');
         }
-    };
+      };
     
 
     const handleImageUpload = (event) => {
@@ -74,7 +76,7 @@ function MetadataModal({ isOpen, closeModal, fetchPatchInfo }) {
         if (file && file.type === 'image/jpeg') {
             setSelectedImage(file);
         } else {
-            alert('Please select a valid JPG image.');
+            setNotification('Please select a valid JPG image.');
         }
     };
 
@@ -115,9 +117,12 @@ function MetadataModal({ isOpen, closeModal, fetchPatchInfo }) {
                     <input type="file" id="patch-file" accept=".json" onChange={handleFileChange} className="border border-gray-400 p-2"/>
                 </div>
                 <div className="flex flex-col mb-4">
-                    <label>Name:</label>
-                    <input type="text" id="patch-name" className="border border-gray-400 p-2"/>
-                </div>
+                    <label htmlFor="patch-name" className="flex items-center">
+                        Name:
+                        <Tooltip message="Reserved characters: /[:/?#[@!$&'()*+,;= -]/" />
+                    </label>
+                    <input type="text" id="patch-name" className="border border-gray-400 p-2" />
+                    </div>
                 <div className="flex flex-col mb-4">
                     <label>Primary Tag:</label>
                     <select value={primaryTag} onChange={(e) => setPrimaryTag(e.target.value)} className="border border-gray-400 p-2">

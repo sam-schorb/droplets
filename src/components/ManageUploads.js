@@ -5,7 +5,7 @@ import { selectUser } from '../slices/userSlice';
 import { fetchUserPatchInfo } from '../slices/userSlice';
 import EditMetadataModal from './EditMetadataModal';
 
-const ManagePatches = () => {
+const ManageUploads = ({ setNotification }) => {
     const dispatch = useDispatch();
     const user = useSelector(selectUser);
     const userId = user ? user.id : null;
@@ -40,7 +40,7 @@ const ManagePatches = () => {
 
     return (
         <div className="w-5/6 xs:w-5/6 sm:w-5/6 md:w-5/6 lg:w-2/3">
-            <div className="text-2xl mb-5">Manage Patches</div>
+            <div className="text-2xl mb-5">Manage uploads</div>
             <ul className="list-none p-0">
                 {patches.map((singlePatchInfo) => ( // Use the 'patches' state for rendering
                     <EditListEntry
@@ -57,9 +57,10 @@ const ManagePatches = () => {
                 closeModal={handleCloseModal}
                 patchId={currentPatchId}
                 fetchPatchInfo={() => dispatch(fetchUserPatchInfo(userId))}
-            />
+                setNotification={setNotification} // Pass the function down to EditMetadataModal
+                />
         </div>
     );
 };
 
-export default React.memo(ManagePatches);
+export default React.memo(ManageUploads);
