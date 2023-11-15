@@ -337,15 +337,16 @@ app.put('/updatePatch/:patchId', authenticateJWT, upload.fields([{ name: 'patchF
 
 app.use((req, res, next) => {
     const csp = `
-        default-src 'self';
-        img-src 'self' data:;
-        font-src 'self' data: https://fonts.gstatic.com;
-        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-        script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://c74-public.nyc3.digitaloceanspaces.com;
+        default-src 'self' https://droplets-bc07b656285d.herokuapp.com;
+        img-src 'self' data: https://droplets-bc07b656285d.herokuapp.com;
+        font-src 'self' data: https://fonts.gstatic.com https://droplets-bc07b656285d.herokuapp.com;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://droplets-bc07b656285d.herokuapp.com;
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://c74-public.nyc3.digitaloceanspaces.com https://droplets-bc07b656285d.herokuapp.com;
     `;
-    res.header("Content-Security-Policy", csp.replace(/\n/g, ''));
+    res.header("Content-Security-Policy", csp.replace(/\n/g, ' '));
     next();
 });
+
 
 app.get('/artist/:username/:patchname', async (req, res) => {
     const { username, patchname } = req.params;
