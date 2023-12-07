@@ -33,17 +33,21 @@ Favourites: Add patches for quick access.
 To run Droplets locally:
 
 1. Clone the repository:
-git clone https://github.com/sams-schorb/droplets.git
-
+```
+git clone https://github.com/sam-schorb/raincloud.git
+```
 2. Navigate to the project directory:
-cd raincloud
-
+```
+cd droplets
+```
 3. Install the dependencies:
+```
 npm install
-
+```
 4. Start the development server:
-npm start
-
+```
+npm run dev
+```
 The application should now be running on `localhost:3000`.
 
 ## Contributing
