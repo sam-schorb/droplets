@@ -1,70 +1,57 @@
-# Getting Started with Create React App
+# README for Droplets
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Introduction
+**Droplets** is an innovative platform designed for hosting and experiencing generative audio through MaxMSP RNBO patches. It's akin to an evolving version of Spotify, providing a dynamic listening experience where each track offers a unique sound every time it's played.
 
-## Available Scripts
+Check out the live version here: [Droplets](https://droplets.iimaginary.com/)
 
-In the project directory, you can run:
+## Features
+- **Dynamic Audio Tracks**: Unique audio experiences with each play, powered by MaxMSP RNBO patches.
+- **User Authentication**: Secure functionality for sign-in, registration, uploading, managing, and favoriting patches.
+- **Responsive Design**: Adapts seamlessly to different device screens.
+- **Search Functionality**: Find patches using keywords, creators, and tags.
+- **Favourites Management**: Easily mark and access favorite patches.
+- **Upload Management**: Upload and control your patches, complete with support for patch files and images.
+- **Interactive UI**: Engaging interface with tooltips and interactive elements.
+- **Patch Customization**: Adjustable UI elements like columns and label visibility.
 
-### `npm start`
+## Tech Stack
+- **Frontend**: React, Redux, React Router, Axios.
+- **Backend**: Express.js, MongoDB.
+- **Styling**: Tailwind CSS.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Usage
+Navigation: Access Search, Favourites, Uploads via the navigation bar.
+Search Patches: Find patches by name or creator.
+Play Patches: Experience unique sounds by clicking on patches.
+Upload Patches: Use the upload icon for your MaxMSP RNBO patches.
+Manage Uploads: Control your uploads in 'Manage Uploads'.
+Favourites: Add patches for quick access.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Installation and Setup
 
-### `npm test`
+To run Droplets locally:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. Clone the repository:
+git clone https://github.com/sams-schorb/droplets.git
 
-### `npm run build`
+2. Navigate to the project directory:
+cd raincloud
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+3. Install the dependencies:
+npm install
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+4. Start the development server:
+npm start
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The application should now be running on `localhost:3000`.
 
-### `npm run eject`
+## Contributing
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Contributions to the Droplets project are welcome! If you have suggestions for improvements or encounter any bugs, please feel free to open an issue or submit a pull request.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+For major changes, please open an issue first to discuss what you would like to change.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Contact
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+If you have any questions or feedback, please reach out at raincloud.web@gmail.com.
