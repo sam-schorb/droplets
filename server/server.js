@@ -519,45 +519,6 @@ app.get('/getArtistPatchInfo/:username', async (req, res) => {
     }
 });
 
-// Route to get patches uploaded by a specific user by username
-app.get('/getArtistPatchInfo/:username', async (req, res) => {
-    const username = req.params.username;
-
-    // Error handling for missing username
-    if (!username) {
-        console.error('[ERROR] Missing username in request');
-        return res.status(400).send('Missing username');
-    }
-
-    try {
-        // First find the user by username to get the userId
-        const user = await usersCollection.findOne({ username: username });
-        if (!user) {
-            return res.status(404).send('User not found');
-        }
-
-        const userPatches = await patchesCollection.find(
-            { userId: user._id.toString() }, // Use the user's ID from the user object
-            {
-                projection: { _id: 1, name: 1, username: 1, uploadDate: 1, image: 1 }
-            }
-        )
-        .sort({ uploadDate: -1 }) // Sorting by uploadDate in descending order
-        .toArray();
-
-        if (userPatches.length > 0) {
-            console.log(`[INFO] Successfully fetched ${userPatches.length} patches for user: ${username}`);
-            res.status(200).json(userPatches);
-        } else {
-            console.log(`[INFO] No patches found for user: ${username}`);
-            res.status(200).json([]);
-        }
-    } catch (error) {
-        console.error(`[ERROR] Exception caught when fetching patches for username '${username}':`, error);
-        res.status(500).send('Internal Server Error');
-    }
-});
-
 
 // Fetch user information by username
 app.get('/getUserByUsername/:username', async (req, res) => {
